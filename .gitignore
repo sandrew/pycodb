@@ -1,0 +1,6 @@
+.env*
+!.env.example
+build
+upload
+__pycache__/
+*.pyc
