@@ -1,0 +1,52 @@
+'''This module includes tools for NocoDB interactions'''
+import os
+
+import requests
+
+AUTH_HEADER = {'xc-token' : os.getenv('NOCO_TOKEN') }
+
+
+def create_link(table_from, link_id, id_from, id_to):
+    '''Performs a request to NocoDB to link two records'''
+    url = f'{os.getenv("NOCO_URL")}/tables/{table_from}/links/{link_id}/records/{id_from}'
+    return perform_request('post', url, { 'Id': id_to })
+
+
+def find(table, view, data):
+    '''Finds a record in NocoDB'''
+    result = records_request('get', table, view, params = f'where={where_params(data)}&limit=1')['list']
+    if len(result) > 0:
+        return result[0]
+    return None
+
+
+def find_or_create(table, view, criteria):
+    '''Find or create a record in NocoDB by specified criteria'''
+    return find(table, view, criteria) or (criteria | records_request('post', table, view, data = criteria))
+
+
+def where_params(params):
+    '''Creates a where clause for NocoDB'''
+    return '~and'.join([f'({key},eq,{value})' for key, value in params.items()])
+
+
+def records_request(method, table, view, params = None, data = None):
+    '''Performs a request to NocoDB records endpoint'''
+    url = f'{os.getenv('NOCO_TOKEN')}/tables/{table}/records?viewId={view}'
+    if params is not None:
+        url = f'{url}&{params}'
+    return perform_request(method, url, data)
+
+
+def perform_request(method, url, data):
+    '''Performs a NocoDB request'''
+    result = requests.request(method  = method,
+                              url     = url,
+                              json    = data,
+                              headers = AUTH_HEADER,
+                              timeout = 5)
+
+    if result.status_code < 200 or result.status_code > 299:
+        raise RuntimeError('NocoDB request has failed')
+
+    return result.json()
