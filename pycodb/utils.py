@@ -2,13 +2,14 @@
 import os
 
 import requests
+from pycodb.config import settings
 
-AUTH_HEADER = {'xc-token' : os.getenv('NOCO_TOKEN') }
+AUTH_HEADER = {'xc-token': settings.NOCO_TOKEN}
 
 
 def create_link(table_from, link_id, id_from, id_to):
     '''Performs a request to NocoDB to link two records'''
-    url = f'{os.getenv("NOCO_URL")}/tables/{table_from}/links/{link_id}/records/{id_from}'
+    url = f'{settings.NOCO_URL}/tables/{table_from}/links/{link_id}/records/{id_from}'
     return perform_request('post', url, { 'Id': id_to })
 
 
@@ -32,7 +33,7 @@ def where_params(params):
 
 def records_request(method, table, view, params = None, data = None):
     '''Performs a request to NocoDB records endpoint'''
-    url = f'{os.getenv('NOCO_URL')}/tables/{table}/records?viewId={view}'
+    url = f'{settings.NOCO_URL}/tables/{table}/records?viewId={view}'
     if params is not None:
         url = f'{url}&{params}'
     return perform_request(method, url, data)
