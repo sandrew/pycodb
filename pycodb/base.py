@@ -19,4 +19,7 @@ class Base(BaseModel):
 
     @classmethod
     def find(cls, entry_id):
-        return cls.parse_attributes(**noco.find(cls.__table_id__, cls.__view_id__, { 'Id': entry_id }))
+        attributes = noco.find(cls.__table_id__, cls.__view_id__, {'Id': entry_id})
+        if attributes is None:
+            return None
+        return cls.parse_attributes(**attributes)
