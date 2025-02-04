@@ -48,6 +48,6 @@ def perform_request(method, url, data):
                               timeout = 5)
 
     if result.status_code < 200 or result.status_code > 299:
-        raise RuntimeError('NocoDB request has failed')
+        raise RuntimeError(f'NocoDB request has failed: status_code {result.status_code}, content {result.content}')
 
     return result.json()
