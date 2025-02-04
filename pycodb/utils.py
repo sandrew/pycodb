@@ -7,6 +7,16 @@ from pycodb.config import settings
 AUTH_HEADER = {'xc-token': settings.NOCO_TOKEN}
 
 
+class NocoDBRequestError(Exception):
+    """
+    class for RequestError from Noco, have status_code and message
+    """
+    def __init__(self, status_code, message):
+        self.status_code = status_code
+        self.message = message
+        super().__init__(f"NocoDB request has failed {status_code}: {message}")
+
+
 def create_link(table_from, link_id, id_from, id_to):
     '''Performs a request to NocoDB to link two records'''
     url = f'{settings.NOCO_URL}/tables/{table_from}/links/{link_id}/records/{id_from}'
@@ -25,6 +35,11 @@ def find_or_create(table, view, criteria):
     '''Find or create a record in NocoDB by specified criteria'''
     return find(table, view, criteria) or (criteria | records_request('post', table, view, data = criteria))
 
+
+def delete(table, view, data):
+    '''Delete a record in NocoDB by id'''
+    result = records_request('delete', table, view, data=data)
+    return result
 
 def where_params(params):
     '''Creates a where clause for NocoDB'''
@@ -48,6 +63,7 @@ def perform_request(method, url, data):
                               timeout = 5)
 
     if result.status_code < 200 or result.status_code > 299:
-        raise RuntimeError(f'NocoDB request has failed: status_code {result.status_code}, content {result.content}')
+        raise NocoDBRequestError(status_code= result.status_code,
+                                 message=result.text)
 
     return result.json()
