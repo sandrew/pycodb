@@ -32,7 +32,7 @@ def where_params(params):
 
 def records_request(method, table, view, params = None, data = None):
     '''Performs a request to NocoDB records endpoint'''
-    url = f'{os.getenv('NOCO_TOKEN')}/tables/{table}/records?viewId={view}'
+    url = f'{os.getenv('NOCO_URL')}/tables/{table}/records?viewId={view}'
     if params is not None:
         url = f'{url}&{params}'
     return perform_request(method, url, data)
