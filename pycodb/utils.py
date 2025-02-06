@@ -1,5 +1,7 @@
 '''This module includes tools for NocoDB interactions'''
 import os
+import time
+from typing import Optional, Dict, Any
 
 import requests
 from pycodb.config import settings
@@ -54,16 +56,47 @@ def records_request(method, table, view, params = None, data = None):
     return perform_request(method, url, data)
 
 
-def perform_request(method, url, data):
-    '''Performs a NocoDB request'''
-    result = requests.request(method  = method,
-                              url     = url,
-                              json    = data,
-                              headers = AUTH_HEADER,
-                              timeout = 5)
+def perform_request(
+        method: str,
+        url: str,
+        data: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        timeout: int = 5,
+        backoff_factor: float = 1.5
+) -> Dict[str, Any]:
+    """
+    Выполняет HTTP-запрос к NocoDB с логикой повторных попыток.
 
-    if result.status_code < 200 or result.status_code > 299:
-        raise NocoDBRequestError(status_code= result.status_code,
-                                 message=result.text)
+    :param method: HTTP-метод запроса.
+    :param url: URL-адрес, к которому выполняется запрос.
+    :param data: JSON-данные, отправляемые в запросе.
+    :param max_retries: Максимальное количество попыток запроса при ошибке.
+    :param timeout: Таймаут в секундах для ожидания ответа.
+    :param backoff_factor: Фактор экспоненциальной задержки между повторными попытками.
+    :return: Ответ сервера в формате JSON.
+    :raises RuntimeError: Если все попытки запроса завершились неудачей.
+    """
 
-    return result.json()
+    retries = 0
+    while retries < max_retries:
+        try:
+            result = requests.request(
+                method=method,
+                url=url,
+                json=data,
+                headers=AUTH_HEADER,
+                timeout=timeout
+            )
+
+            if not (200 <= result.status_code < 300):
+                raise RuntimeError(f"NocoDB request failed with status {result.status_code}")
+
+            return result.json()
+
+        except (requests.RequestException, RuntimeError) as e:
+            retries += 1
+            if retries == max_retries:
+                raise RuntimeError("NocoDB request has failed after maximum retries") from e
+            else:
+                sleep_time = backoff_factor ** retries  # Экспоненциальная задержка
+                time.sleep(sleep_time)  # Ожидание перед следующей попыткой
