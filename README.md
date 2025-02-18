@@ -9,14 +9,26 @@ PycoDB is a Python ORM for NocoDB. It allows you to interact with NocoDB databas
 from pycodb import Base
 
 class Employee(Base):
-    __table_id__ = 'table_id'
-    __view_id__ = 'view_id'
+    __table__ = 'table_name'
 
     name: str
     age: int
+    
+    @staticmethod
+    def link_id():
+        return "link_id"
 
+    @classmethod
+    def table_id(cls):
+        return "table_id"
+
+    @classmethod
+    def view_id(cls):
+        return "view_id"
+        
     @property
     def is_adult(self):
         return self.age >= 18
+        
 
 assert Employee.find(567).is_adult is True
