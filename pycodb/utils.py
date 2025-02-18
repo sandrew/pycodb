@@ -2,9 +2,9 @@
 import os
 
 import requests
-from pycodb.config import settings
+from pycodb import noco_settings
 
-AUTH_HEADER = {'xc-token': settings.NOCO_TOKEN}
+AUTH_HEADER = {'xc-token': noco_settings.NOCO_TOKEN}
 
 
 class NocoDBRequestError(Exception):
@@ -19,7 +19,7 @@ class NocoDBRequestError(Exception):
 
 def create_link(table_from, link_id, id_from, id_to):
     '''Performs a request to NocoDB to link two records'''
-    url = f'{settings.NOCO_URL}/tables/{table_from}/links/{link_id}/records/{id_from}'
+    url = f'{noco_settings.NOCO_URL}/tables/{table_from}/links/{link_id}/records/{id_from}'
     return perform_request('post', url, { 'Id': id_to })
 
 
@@ -36,19 +36,29 @@ def find_or_create(table, view, criteria):
     return find(table, view, criteria) or (criteria | records_request('post', table, view, data = criteria))
 
 
-def delete(table, view, data):
-    '''Delete a record in NocoDB by id'''
-    result = records_request('delete', table, view, data=data)
-    return result
+def where_condition(key, value, operand='eq'):
+    '''Creates a condition for NocoDB'''
+    if isinstance(value, list):
+        value = ','.join([str(v) for v in value])
+    return f'({key},{operand},{value})'
 
 def where_params(params):
     '''Creates a where clause for NocoDB'''
-    return '~and'.join([f'({key},eq,{value})' for key, value in params.items()])
+    conditions = []
+    for key, value in params.items():
+        # { 'key': { 'operand': 'value' } } -> (key,operand,value)
+        if isinstance(value, dict):
+            for operand, final_value in value.items():
+                conditions.append(where_condition(key, final_value, operand))
+        # { 'key': 'value' } -> (key,eq,value)
+        else:
+            conditions.append(where_condition(key, value))
 
+    return '~and'.join(conditions)
 
 def records_request(method, table, view, params = None, data = None):
     '''Performs a request to NocoDB records endpoint'''
-    url = f'{settings.NOCO_URL}/tables/{table}/records?viewId={view}'
+    url = f'{noco_settings.NOCO_URL}/tables/{table}/records?viewId={view}'
     if params is not None:
         url = f'{url}&{params}'
     return perform_request(method, url, data)
@@ -63,6 +73,7 @@ def perform_request(method, url, data):
                               timeout = 5)
 
     if result.status_code < 200 or result.status_code > 299:
+        logger.error('NocoDB %s request to %s has failed: %s', method.upper(), url, result.text)
         raise NocoDBRequestError(status_code= result.status_code,
                                  message=result.text)
 

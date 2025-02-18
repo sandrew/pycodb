@@ -1,28 +1,27 @@
-import os
-import pytest
-from pycodb.config import Settings
-from pydantic import ValidationError
+from pycodb import init_noco_settings, noco_settings, NocoSettings
 
 
-@pytest.fixture(scope="module", autouse=True)
-def set_env_vars():
-    """Fixture for setting environment variables for tests"""
-    os.environ["NOCO_URL"] = "https://test.com"
-    os.environ["NOCO_TOKEN"] = "test-token"
-    yield
-    os.environ.pop("NOCO_URL", None)
-    os.environ.pop("NOCO_TOKEN", None)
+class ConfigSettings(NocoSettings):
+    NOCO_URL: str
+    NOCO_TOKEN: str
+
+class WrongConfigSettings(NocoSettings):
+    NOCO_TOKEN: str
+    NOCO_WRONG_ATTR: str
 
 
-def test_config_loading(set_env_vars):
+def test_config_loading():
     """Check loading settings"""
-    settings = Settings()
-    assert settings.NOCO_URL == "https://test.com"
-    assert settings.NOCO_TOKEN == "test-token"
+    conf_settings = ConfigSettings(NOCO_URL = "https://test.com", NOCO_TOKEN ="test-token")
+    init_noco_settings(conf_settings)
+    print(noco_settings)
+    assert noco_settings.NOCO_URL == "https://test.com"
+    assert noco_settings.NOCO_TOKEN == "test-token"
 
 
-def test_missing_env_var(set_env_vars):
+def test_missing_var():
     """Check missing variable"""
-    del os.environ["NOCO_URL"]
-    settings = Settings()
-    assert settings.NOCO_URL != "https://test.com"
+    conf_settings = WrongConfigSettings(NOCO_TOKEN ="test-token", NOCO_WRONG_ATTR ="test-wrong-attr")
+    init_noco_settings(conf_settings)
+    assert noco_settings.NOCO_URL == ""
+    assert hasattr(noco_settings, "NOCO_WRONG_ATTR") == False
