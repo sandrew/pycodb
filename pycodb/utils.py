@@ -1,11 +1,10 @@
 '''This module includes tools for NocoDB interactions'''
-import os
-
+import logging
 import requests
 from pycodb import noco_settings
 
+logger = logging.getLogger(__name__)
 AUTH_HEADER = {'xc-token': noco_settings.NOCO_TOKEN}
-
 
 class NocoDBRequestError(Exception):
     """
