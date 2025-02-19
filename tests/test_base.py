@@ -5,8 +5,19 @@ from pycodb.base import Base
 from pycodb.utils import NocoDBRequestError
 
 class ModelForTest(Base):
-    __table_id__ = 'TestBase'
-    __view_id__ = 'TestView'
+    __table__ = 'TestBase'
+
+    @staticmethod
+    def link_id(*args, **kwargs) -> str:
+        return 'test_link_id'
+
+    @classmethod
+    def table_id(cls) -> str:
+        return 'test_table_id'
+
+    @classmethod
+    def view_id(cls) -> str:
+        return 'test_view_id'
 
 
 @pytest.fixture
@@ -18,7 +29,7 @@ def mock_find_or_create():
 @pytest.fixture
 def mock_delete():
     """Mock delete function for testing"""
-    with patch('pycodb.utils.delete') as mock:
+    with patch('pycodb.utils.records_request') as mock:
         yield mock
 
 
