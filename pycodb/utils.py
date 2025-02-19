@@ -4,7 +4,6 @@ import requests
 from . import noco_settings
 
 logger = logging.getLogger(__name__)
-AUTH_HEADER = {'xc-token': noco_settings.NOCO_TOKEN}
 
 class NocoDBRequestError(Exception):
     """
@@ -68,7 +67,7 @@ def perform_request(method, url, data):
     result = requests.request(method  = method,
                               url     = url,
                               json    = data,
-                              headers = AUTH_HEADER,
+                              headers = {'xc-token': noco_settings.NOCO_TOKEN},
                               timeout = 5)
 
     if result.status_code < 200 or result.status_code > 299:
