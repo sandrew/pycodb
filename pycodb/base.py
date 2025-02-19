@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from pycodb import utils as noco
+from . import utils as noco
 
 
 class Base(BaseModel, ABC, validate_assignment=True):

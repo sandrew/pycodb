@@ -1,4 +1,4 @@
-from pycodb.config import NocoSettings
+from .config import NocoSettings
 
 noco_settings = NocoSettings()
 
