@@ -71,4 +71,3 @@ class Base(BaseModel, ABC, validate_assignment=True):
     def destroy(self):
         '''Destroys the record in NocoDB'''
         noco.records_request('delete', self.table_id(), self.view_id(), data={'Id': self.id})
-

@@ -24,4 +24,4 @@ def test_missing_var():
     conf_settings = WrongConfigSettings(NOCO_TOKEN ="test-token", NOCO_WRONG_ATTR ="test-wrong-attr")
     init_noco_settings(conf_settings)
     assert noco_settings.NOCO_URL == ""
-    assert hasattr(noco_settings, "NOCO_WRONG_ATTR") == False
+    assert hasattr(noco_settings, "NOCO_WRONG_ATTR") is False
