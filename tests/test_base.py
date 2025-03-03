@@ -1,6 +1,6 @@
 import datetime
-import pytest
 from unittest.mock import patch
+import pytest
 from pycodb.base import Base
 from pycodb.utils import NocoDBRequestError
 

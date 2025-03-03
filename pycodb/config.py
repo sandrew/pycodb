@@ -7,6 +7,3 @@ class NocoSettings(BaseSettings):
 
     NOCO_URL: str = ""
     NOCO_TOKEN: str = ""
-
-
-
