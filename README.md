@@ -13,8 +13,8 @@ class Employee(Base):
 
     name: str
     age: int
-    
-    @staticmethod
+
+    @classmethod
     def link_id():
         return "link_id"
 
@@ -25,10 +25,10 @@ class Employee(Base):
     @classmethod
     def view_id(cls):
         return "view_id"
-        
+
     @property
     def is_adult(self):
         return self.age >= 18
-        
+
 
 assert Employee.find(567).is_adult is True

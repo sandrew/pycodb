@@ -14,6 +14,8 @@ class Base(BaseModel, ABC, validate_assignment=True):
 
     model_config = ConfigDict(populate_by_name=True)
 
+    # Abstract
+
     @staticmethod
     @abstractmethod
     def link_id(*args, **kwargs) -> str:
@@ -29,19 +31,50 @@ class Base(BaseModel, ABC, validate_assignment=True):
     def view_id(cls) -> str:
         pass
 
+    # Utils
+
     @classmethod
     def from_noco(cls, **attributes):
         '''Creates an instance from NocoDB attributes'''
         return cls(**attributes)
 
+    # Finders
+
+    @classmethod
+    def find_all(cls, conditions, limit=None, sort=None):
+        '''Finds all records in NocoDB'''
+        params = f'where={noco.where_params(conditions)}'
+        if limit:
+            params += f'&limit={limit}'
+        if sort:
+            params += f'&sort={sort}'
+        result = noco.records_request('get', cls.table_id(), cls.view_id(), params=params)
+        return [cls.from_noco(**record) for record in result['list']]
+
+    @classmethod
+    def find_by(cls, conditions):
+        '''Finds all records in NocoDB'''
+        result = cls.find_all(conditions, limit=1)
+
+        if len(result) > 0:
+            return result[0]
+
+        return None
+
     @classmethod
     def find(cls, entry_id):
         '''Finds a record by ID in NocoDB'''
-        result = noco.records_request('get', cls.table_id(), cls.view_id(),
-                                      params = f'where={noco.where_params({ 'Id': entry_id })}&limit=1')['list']
-        if len(result) > 0:
-            return cls.from_noco(**result[0])
-        return None
+        return cls.find_by({ 'Id' : entry_id })
+
+    # Create
+
+    @classmethod
+    def create(cls, data):
+        '''Creates a record in NocoDB'''
+        result = cls.records_request('post', data=data)
+        return cls.from_noco(**result)
+
+    # Delete
 
     @classmethod
     def delete(cls, entry_id: int):
@@ -54,20 +87,6 @@ class Base(BaseModel, ABC, validate_assignment=True):
                        else e.message)
             return {'success': False, 'status_code': e.status_code, 'message': message}
 
-    @classmethod
-    def create(cls, data):
-        result = noco.find_or_create(cls.table_id(), cls.view_id(), data)
-        if result is None:
-            return None
-        return cls.from_noco(**result)
-
-    @classmethod
-    def find_all(cls, conditions):
-        '''Finds all records in NocoDB'''
-        result = noco.records_request('get', cls.table_id(), cls.view_id(),
-                                      params=f'where={noco.where_params(conditions)}')['list']
-        return [cls.from_noco(**record) for record in result]
-
     def destroy(self):
         '''Destroys the record in NocoDB'''
-        noco.records_request('delete', self.table_id(), self.view_id(), data={'Id': self.id})
+        self.delete(self.id)

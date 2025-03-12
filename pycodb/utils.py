@@ -38,7 +38,14 @@ def where_condition(key, value, operand='eq'):
     '''Creates a condition for NocoDB'''
     if isinstance(value, list):
         value = ','.join([str(v) for v in value])
+    elif value is None:
+        value = 'null'
+        if operand == 'eq':
+            operand = 'is'
+        elif operand == 'neq':
+            operand = 'isnot'
     return f'({key},{operand},{value})'
+
 
 def where_params(params):
     '''Creates a where clause for NocoDB'''
@@ -67,12 +74,27 @@ def perform_request(method, url, data):
     result = requests.request(method  = method,
                               url     = url,
                               json    = data,
-                              headers = {'xc-token': noco_settings.NOCO_TOKEN},
+                              headers = { 'xc-token' : noco_settings.NOCO_TOKEN },
                               timeout = 5)
 
+    return process_request_result(result, method, url)
+
+
+def upload_file(file, title, path):
+    url = f'{noco_settings.NOCO_URL}/storage/upload'
+    result = requests.post(url     = url,
+                           files   = { 'file' : (title, file) },
+                           headers = { 'xc-token' : noco_settings.NOCO_TOKEN },
+                           params  = { 'path' : path },
+                           timeout = 10)
+
+    return process_request_result(result, 'POST', url)
+
+
+def process_request_result(result, method, url):
     if result.status_code < 200 or result.status_code > 299:
         logger.error('NocoDB %s request to %s has failed: %s', method.upper(), url, result.text)
-        raise NocoDBRequestError(status_code= result.status_code,
-                                 message=result.text)
+        raise NocoDBRequestError(status_code = result.status_code,
+                                 message     = result.text)
 
     return result.json()
