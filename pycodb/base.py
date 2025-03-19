@@ -52,9 +52,9 @@ class Base(BaseModel, ABC, validate_assignment=True):
         return [cls.from_noco(**record) for record in result['list']]
 
     @classmethod
-    def find_by(cls, conditions):
+    def find_by(cls, conditions, sort=None):
         '''Finds all records in NocoDB'''
-        result = cls.find_all(conditions, limit=1)
+        result = cls.find_all(conditions, sort=sort, limit=1)
 
         if len(result) > 0:
             return result[0]
